@@ -23,7 +23,7 @@ class DummyAdapter(ApiAdapter):
             response = {'error': str(param_error)}
             status_code = 400
 
-        logging.debug(response)
+        logging.debug(f'Sending {response} from DummyAdapter.get()')
         content_type = 'application/json'
         return ApiAdapterResponse(response, content_type=content_type, status_code=status_code)
 

@@ -55,9 +55,6 @@ class PrototypeDAQAdapter(ApiAdapter):
 
 
 
-
-
-
 ###################### Old get/put functions for IAC ######################
 
     # @response_types("application/json", default="application/json")
