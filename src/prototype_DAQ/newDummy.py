@@ -43,10 +43,6 @@ class DummyAdapter(ApiAdapter):
         logging.debug(f"PUT response: {response}")
         return ApiAdapterResponse(response, content_type='application/json', status_code=status_code)
 
-
-
-
-
     def cleanup(self):
         self.dummyController.cleanup()
 
