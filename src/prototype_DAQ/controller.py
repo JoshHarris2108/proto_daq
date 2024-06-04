@@ -1,9 +1,9 @@
-from functools import partial
 import logging
+from functools import partial
 from odin.adapters.parameter_tree import ParameterTree, ParameterTreeError
-from odin.adapters.adapter import ApiAdapter, ApiAdapterRequest, ApiAdapterResponse, request_types, response_types
+from odin.adapters.adapter import ApiAdapterRequest, ApiAdapterResponse
 
-class PrototypeDAQController():
+class PrototypeDAQController:
     """Class to manage the other adapters in the system."""
 
     def __init__(self):
@@ -11,83 +11,48 @@ class PrototypeDAQController():
         self.test_value = "This is a test value :):):):)"
         self.adapters = {}
 
-        self.param_tree = ParameterTree({
-            'test_value': (lambda: self.test_value, None),
-            'dummy_state': (partial(self.get_dummy_state), partial(self.set_dummy_state))
-        })
+        # Initialize the parameter tree after adapters are loaded
+        self.param_tree = None
 
     def initialize_adapters(self, adapters):
         """Get access to all of the other adapters."""
         self.adapters = adapters
         logging.debug(f"Adapters loaded: {self.adapters}")
-  
+        #assign adapters to self and check for loaded adpaters
+
+        self.param_tree = ParameterTree({
+            'test_value': (lambda: self.test_value, None),
+            'dummy_enable': (lambda: self.iac_get('dummy', 'enable'), partial(self.iac_set,'dummy', 'enable'))
+        })
+
     def get(self, path):
-        """Get the parameter tree from the appropriate adapter or the controller."""
-        adapter_name, param_path = self._parse_path(path)
-        
-        if adapter_name == 'self':
-            # Access the controller's own parameter tree
-            return self.param_tree.get(param_path)
-        elif adapter_name in self.adapters:
-            # Create an ApiAdapterRequest object to pass to the adapter's get method
-            request = ApiAdapterRequest(None, accept="application/json")
-            # Call the get method on the target adapter
-            return self.adapters[adapter_name].get(param_path, request).data
-        else:
-            # Error handkling if adapter is not found
-            raise ParameterTreeError(f"Adapter {adapter_name} not found")
+        """Get the parameter tree from the controller."""
+        if not self.param_tree:
+            raise ParameterTreeError("Parameter tree not initialized")
+        return self.param_tree.get(path)
 
     def set(self, path, data):
-        """Set parameters in the parameter tree of the appropriate adapter or the controller."""
-        adapter_name, param_path = self._parse_path(path)
-        
-        if adapter_name == 'self':
-            # Access the controller's own parameter tree
-            self.param_tree.set(param_path, data)
-        elif adapter_name in self.adapters:
-            # create and pass the ApiAdapterRequest object to the correct adapter
-            request = ApiAdapterRequest(data)
-            self.adapters[adapter_name].put(param_path, request)
-        else:
-            raise ParameterTreeError(f"Adapter {adapter_name} not found")
+        """Set parameters in the parameter tree of the controller."""
+        if not self.param_tree:
+            raise ParameterTreeError("Parameter tree not initialized")
+        self.param_tree.set(path, data)
 
-    def _parse_path(self, path):
-        """Private method to parse the adapter name and parameter path from the URI path, 
-        to route the requests to the correct adapter and path"""
-        parts = path.strip('/').split('/')
-        
-        # If the path is empty, it's a request to the root of the controller
-        if len(parts) == 0:
-            raise ParameterTreeError("Invalid path format. Path is empty")
-        
-        adapter_name = parts[0] if parts[0] else 'self'
-        param_path = '/'.join(parts[1:]) if len(parts) > 1 else ""
-        
-        return adapter_name, param_path
+    def iac_get(self, adapter_name, path):
+        """Generic IAC get method, that will create a request object and pass it to the get method of the 
+        corresponding adapter"""
+        request = ApiAdapterRequest(None, accept="application/json")
+        response = self.adapters[adapter_name].get(path, request)
+        if response.status_code != 200:
+            logging.debug(f"IAC GET failed for adapter {adapter_name}, path {path}: {response.data}")
+        return response.data[path]
 
-    def get_dummy_state(self):
-        """Get the enable state from the dummy adapter."""
-        if 'dummy' in self.adapters:
-            # Call the dummy adapter's get method and return the appropriate part of the response
-            response = self.adapters['dummy'].dummyController.get('enable', False)
-            if isinstance(response, dict) and 'enable' in response:
-                return response['enable']
-            else:
-                return response
-        else:
-            return {"state": "Adapter not initialized"}
-
-    def set_dummy_state(self, data):
-        """Set the state on the dummy adapter."""
-        if 'dummy' in self.adapters:
-            # Ensure data is in the correct format before sending it to the dummy adapter
-            if isinstance(data, dict) and 'dummy_state' in data:
-                value = data['dummy_state']
-            else:
-                value = data
-            self.adapters['dummy'].dummyController.set('enable', value)
-        else:
-            raise ParameterTreeError("Dummy adapter is not initialized")
+    def iac_set(self, adapter_name, path, data):
+        """Generic IAC set method, that will create a request object with the data to be set and pass it to 
+        the corresponding adapter"""
+        request = ApiAdapterRequest(data)
+        response = self.adapters[adapter_name].put(path, request)
+        if response.status_code != 200:
+            logging.debug(f"IAC SET failed for adapter {adapter_name}, path {path}: {response.data}")
 
 class PrototypeDAQControllerError(Exception):
     """Simple exception class to wrap lower-level exceptions."""
