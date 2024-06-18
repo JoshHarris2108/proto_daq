@@ -24,7 +24,7 @@ class PrototypeDAQController:
         self.param_tree = ParameterTree({
             'test_value': (lambda: self.test_value, None),
             'dummy_enable': (lambda: self.iac_get('dummy', 'enable'), partial(self.iac_set, 'dummy', 'enable')),
-            'test_proxy': (self.async_wrapper(self.async_iac_get, 'test_proxy', 'node_1'), partial(self.async_iac_set, 'test_proxy', 'node_1'))
+            'test_proxy': (lambda: self.iac_get('test_proxy', 'node_1'), partial(self.iac_set, 'test_proxy', 'node_1'))
         })
 
     def get(self, path):
@@ -50,30 +50,6 @@ class PrototypeDAQController:
         response = self.adapters[adapter_name].put(path, request)
         if response.status_code != 200:
             logging.debug(f"IAC SET failed for adapter {adapter_name}, path {path}: {response.data}")
-
-    async def async_iac_get(self, adapter_name, path):
-        """Generic IAC get method for asynchronous adapters."""
-        request = ApiAdapterRequest(None, accept="application/json")
-        response = await self.adapters[adapter_name].get(path, request)
-        if response.status_code != 200:
-            logging.debug(f"IAC GET failed for adapter {adapter_name}, path {path}: {response.data}")
-        logging.debug(f'Raw response: {response.data}')
-        return response.data[path]
-
-    async def async_iac_set(self, adapter_name, path, data):
-        """Generic IAC set method for asynchronous adapters."""
-        request = ApiAdapterRequest(data)
-        response = await self.adapters[adapter_name].put(path, request)
-        if response.status_code != 200:
-            logging.debug(f"IAC SET failed for adapter {adapter_name}, path {path}: {response.data}")
-
-    def async_wrapper(self, func, *args, **kwargs):
-        """Wrap an async function to make it callable in a synchronous context."""
-        async def async_func():
-            return await func(*args, **kwargs)
-        
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(async_func())
 
 class PrototypeDAQControllerError(Exception):
     """Simple exception class to wrap lower-level exceptions."""

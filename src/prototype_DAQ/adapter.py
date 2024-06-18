@@ -53,8 +53,6 @@ class PrototypeDAQAdapter(ApiAdapter):
         return ApiAdapterResponse(response, content_type=content_type, status_code=status_code)
 
 
-
-
 ###################### Old get/put functions for IAC ######################
 
     # @response_types("application/json", default="application/json")
