@@ -6,7 +6,8 @@ from odin.adapters.adapter import (
     ApiAdapter, ApiAdapterResponse,
     request_types, response_types, wants_metadata
 )
-from odin.adapters.base_proxy import BaseProxyTarget, BaseProxyAdapter
+#from odin.adapters.base_proxy import BaseProxyTarget, BaseProxyAdapter
+from prototype_DAQ.base_proxy import BaseProxyTarget, BaseProxyAdapter
 
 class TargetDecodeError(Exception):
     """Simple error class for raising target decode error exceptions."""
@@ -43,44 +44,14 @@ class ProxyTarget(BaseProxyTarget):
         """
         Get data from the remote target.
 
-        This method requests data from the remote target by issuing a GET request to the target
-        URL, and then updates the local proxy target data and status information according to the
-        response. The request is sent to the target by the implementation-specific _send_request
-        method.
+        This method updates the local proxy target with new data by issuing a GET request to the
+        target URL, and then updates the local proxy target data and status information according to
+        the response. The detailed handling of this is implemented by the base class.
 
         :param path: path to data on remote target
         :param get_metadata: flag indicating if metadata is to be requested
         """
-        # Create a GET request to send to the target
-        headers = self.request_headers.copy()
-
-        # If metadata is requested, modify the Accept header accordingly
-        if get_metadata:
-            headers["Accept"] += ";metadata=True"
-
-        request = {
-            'url': self.url + path,
-            'headers': headers,
-            'timeout': self.request_timeout
-        }
-
-        # Send the request to the remote target
-        logging.debug(f'Calling _send_request with: {request}')
-        
-        return self._send_request('GET', request, path, get_metadata)
-
-    # def remote_get(self, path='', get_metadata=False):
-    #     """
-    #     Get data from the remote target.
-
-    #     This method updates the local proxy target with new data by issuing a GET request to the
-    #     target URL, and then updates the local proxy target data and status information according to
-    #     the response. The detailed handling of this is implemented by the base class.
-
-    #     :param path: path to data on remote target
-    #     :param get_metadata: flag indicating if metadata is to be requested
-    #     """
-    #     super(ProxyTarget, self).remote_get(path, get_metadata)
+        super(ProxyTarget, self).remote_get(path, get_metadata)
 
     def remote_set(self, path, data):
         """
@@ -116,58 +87,6 @@ class ProxyTarget(BaseProxyTarget):
             response = fetch_exception
 
         self._process_response(response, path, get_metadata)
-
-    def _process_response(self, response, path, get_metadata):
-        """
-        Process a response from the remote target.
-        """
-        # Update the timestamp of the last request in standard format
-        self.last_update = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
-
-        # If an HTTP response was received, handle accordingly
-        if isinstance(response, requests.Response):
-            # Decode the reponse body, handling errors by re-processing the repsonse as an
-            # exception. Otherwise, update the target data and status based on the response.
-            try:
-                response_body = response.json()
-            except ValueError as decode_error:
-                error_string = "Failed to decode response body: {}".format(str(decode_error))
-                self._process_response(TargetDecodeError(error_string), path, get_metadata)
-            else:
-                # Update status code, errror string and data accordingly
-                self.status_code = response.status_code
-                self.error_string = 'OK'
-                # Set a reference to the data or metadata to update as necessary
-                data_ref = self.metadata if get_metadata else self.data
-                # If a path was specified, parse it and descend to the appropriate location in the
-                # data struture
-                if path:
-                    path_elems = path.split('/')
-                    # Remove empty string caused by trailing slashes
-                    if path_elems[-1] == '':
-                        del path_elems[-1]
-                    # Traverse down the data tree for each element
-                    for elem in path_elems[:-1]:
-                        data_ref = data_ref.setdefault(elem, {})
-                # Update the data or metadata with the body of the response
-                for key in response_body:
-                    data_ref[key] = response_body[key]
-
-        # Otherwise, handle the exception, updating status information and reporting the error
-        elif isinstance(response, Exception):
-            if isinstance(response, requests.RequestException):
-                self.status_code = 408 if isinstance(response, requests.Timeout) else 502
-                self.error_string = str(response)
-            else:
-                self.status_code = 500
-                self.error_string = str(response)
-
-            logging.error(
-                "Error: proxy target %s request failed (%d): %s ",
-                self.name,
-                self.status_code,
-                self.error_string,
-            )
 
 class ProxyAdapter(ApiAdapter, BaseProxyAdapter):
     """

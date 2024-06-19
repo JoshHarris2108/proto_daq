@@ -76,7 +76,7 @@ class BaseProxyTarget(object):
 
         # If metadata is requested, modify the Accept header accordingly
         if get_metadata:
-            request.headers["Accept"] += ";metadata=True"
+            headers["Accept"] += ";metadata=True"
 
         request = {
             'url': self.url + path,
@@ -169,98 +169,6 @@ class BaseProxyTarget(object):
                 self.status_code,
                 self.error_string,
             )
-
-    # def _process_response(self, response, path, get_metadata):
-    #     """
-    #     Process a response from the remote target.
-
-    #     This method processes the response of a remote target to a request. The response is used to
-    #     update the local proxy target data metadata and status as appropriate. If the request failed
-    #     the returned exception is decoded and the status updated accordingly.
-
-    #     :param response: HTTP response from the target, or an exception if the response failed
-    #     :param path: path of data being updated
-    #     :param get_metadata: flag indicating if metadata was requested
-    #     """
-    #     # Update the timestamp of the last request in standard format
-    #     self.last_update = tornado.httputil.format_timestamp(time.time())
-
-    #     # If an HTTP response was received, handle accordingly
-    #     if isinstance(response, tornado.httpclient.HTTPResponse):
-
-    #         # Decode the reponse body, handling errors by re-processing the repsonse as an
-    #         # exception. Otherwise, update the target data and status based on the response.
-    #         try:
-    #             response_body = json_decode(response.body)
-    #         except ValueError as decode_error:
-    #             error_string = "Failed to decode response body: {}".format(str(decode_error))
-    #             self._process_response(TargetDecodeError(error_string), path, get_metadata)
-    #         else:
-
-    #             # Update status code, errror string and data accordingly
-    #             self.status_code = response.code
-    #             self.error_string = 'OK'
-
-    #             # Set a reference to the data or metadata to update as necessary
-    #             if get_metadata:
-    #                 data_ref = self.metadata
-    #             else:
-    #                 data_ref = self.data
-
-    #             # If a path was specified, parse it and descend to the appropriate location in the
-    #             # data struture
-    #             if path:
-    #                 path_elems = path.split('/')
-
-    #                 # Remove empty string caused by trailing slashes
-    #                 if path_elems[-1] == '':
-    #                     del path_elems[-1]
-
-    #                 # Traverse down the data tree for each element
-    #                 for elem in path_elems[:-1]:
-    #                     data_ref = data_ref[elem]
-
-    #             # Update the data or metadata with the body of the response
-    #             for key in response_body:
-    #                 new_elem = response_body[key]
-    #                 data_ref[key] = new_elem
-
-    #     # Otherwise, handle the exception, updating status information and reporting the error
-    #     elif isinstance(response, Exception):
-
-    #         if isinstance(response, tornado.httpclient.HTTPError):
-    #             error_type = "HTTP error"
-    #             self.status_code = response.code
-    #             self.error_string = response.message
-
-    #         elif isinstance(response, tornado.ioloop.TimeoutError):
-    #             error_type = "Timeout"
-    #             self.status_code = 408
-    #             self.error_string = str(response)
-
-    #         elif isinstance(response, IOError):
-    #             error_type = "IO error"
-    #             self.status_code = 502
-    #             self.error_string = str(response)
-
-    #         elif isinstance(response, TargetDecodeError):
-    #             error_type = "Decode error"
-    #             self.status_code = 415
-    #             self.error_string = str(response)
-
-    #         else:
-    #             error_type = "Unknown error"
-    #             self.status_code = 500
-    #             self.error_string = str(response)
-
-    #         logging.error(
-    #             "%s: proxy target %s request failed (%d): %s ",
-    #             error_type,
-    #             self.name,
-    #             self.status_code,
-    #             self.error_string,
-    #         )
-
 
 class BaseProxyAdapter(object):
     """
