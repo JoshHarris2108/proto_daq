@@ -1,6 +1,12 @@
-import logging
+"""
+Proxy adapter for use in odin-control.
+
+This module implements a simple proxy adapter, allowing requests to be proxied to
+one or more remote HTTP resources, typically further odin-control instances.
+
+Tim Nicholls, Ashley Neaves STFC Detector Systems Software Group.
+"""
 import requests
-import time
 from odin.util import decode_request_body
 from odin.adapters.adapter import (
     ApiAdapter, ApiAdapterResponse,
@@ -8,10 +14,6 @@ from odin.adapters.adapter import (
 )
 #from odin.adapters.base_proxy import BaseProxyTarget, BaseProxyAdapter
 from prototype_DAQ.base_proxy import BaseProxyTarget, BaseProxyAdapter
-
-class TargetDecodeError(Exception):
-    """Simple error class for raising target decode error exceptions."""
-    pass
 
 
 class ProxyTarget(BaseProxyTarget):
@@ -69,23 +71,26 @@ class ProxyTarget(BaseProxyTarget):
     def _send_request(self, method, request, path, get_metadata=False):
         """
         Send a request to the remote target and update data.
+        
+        This internal method sends a request to the remote target using the HTTP client
+        and handles the response, updating target data accordingly.
+
+        :param request: HTTP request to transmit to target
+        :param path: path of data being updated
+        :param get_metadata: flag indicating if metadata is to be requested
         """
-        logging.debug("Calling _send_request")
-        # 'fixing' UnboundLocalError: local variable 'response' referenced before assignment
-        response = None
+        # Send the request to the remote target, handling any exceptions that occur
         try:
+            # Build the get/put request, using the requests library to send them
             if method == 'GET':
-                logging.debug(f'Calling GET methods')
-                response = requests.get(request['url'], headers=request['headers'], timeout=request['timeout'])
-                logging.debug(f'response from _send_request: {response}')
-                logging.debug(f'Response body: {response.text}')
+                response = requests.get(url=request['url'], headers=request['headers'], timeout=request['timeout'])
             elif method == 'PUT':
-                logging.debug(f'Calling PUT methods')
-                response = requests.put(request['url'], headers=request['headers'], timeout=request['timeout'], data=request['data'])
-                logging.debug(f'response from _send_request: {response}')
+                response = requests.put(url=request['url'], headers=request['headers'], timeout=request['timeout'], data=request['data'])
         except Exception as fetch_exception:
+            # Set the response to the exception so it can be handled during response resolution 
             response = fetch_exception
 
+        # Process the response from the target, updating data as appropriate
         self._process_response(response, path, get_metadata)
 
 class ProxyAdapter(ApiAdapter, BaseProxyAdapter):

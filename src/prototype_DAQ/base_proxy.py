@@ -1,19 +1,30 @@
+"""
+Base class implementations for the synchronous and asynchronous proxy adapter implemntations.
+
+This module contains classes that provide the common behaviour for the implementations of the
+proxy target and adaprers.
+
+Tim Nicholls, Ashley Neaves STFC Detector Systems Software Group.
+"""
 import logging
 import time
 import requests
 from requests.exceptions import HTTPError, RequestException
-from tornado.escape import json_encode, json_decode
+from tornado.escape import json_encode
+#from tornado.httputil import format_timestamp
+import tornado.httputil
 from odin.adapters.parameter_tree import ParameterTree, ParameterTreeError
 
 class TargetDecodeError(Exception):
     """Simple error class for raising target decode error exceptions."""
     pass
 
+
 class BaseProxyTarget(object):
     """
     Proxy target base class.
 
-    This base class provides the core fnctionality needed for the concrete synchronous and
+    This base class provides the core functionality needed for the concrete synchronous and
     asynchronous implementations. It is not intended to be instantiated directly.
     """
 
@@ -78,22 +89,22 @@ class BaseProxyTarget(object):
         if get_metadata:
             headers["Accept"] += ";metadata=True"
 
+        # Create a GET request dict to send to the _send_request method
         request = {
+            'method': 'GET',
             'url': self.url + path,
             'headers': headers,
             'timeout': self.request_timeout
         }
 
         # Send the request to the remote target
-        logging.debug(f'Calling _send_request with: {request}')
-        
-        return self._send_request('GET', request, path, get_metadata)
+        return self._send_request(request, path, get_metadata)
 
     def remote_set(self, path, data):
         """
         Set data on the remote target.
 
-         his method sends data to the remote target by issuing a PUT request to the target
+        This method sends data to the remote target by issuing a PUT request to the target
         URL, and then updates the local proxy target data and status information according to the
         response. The request is sent to the target by the implementation-specific _send_request
         method.
@@ -105,8 +116,9 @@ class BaseProxyTarget(object):
         if isinstance(data, dict):
             data = json_encode(data)
 
-        # Create a PUT request to send to the target
+        # Create a PUT request dict to send to the _send_request method
         request = {
+            'method': 'PUT',
             'url': self.url + path,
             'headers': self.request_headers,
             'timeout': self.request_timeout,
@@ -114,16 +126,77 @@ class BaseProxyTarget(object):
         }
 
         # Send the request to the remote target
-        logging.debug(f'Calling _send_request with: {request}')
-        
-        return self._send_request('PUT', request, path)
+        return self._send_request(request, path)
+
+    # def remote_get(self, path='', get_metadata=False):
+    #     """
+    #     Get data from the remote target.
+
+    #     This method requests data from the remote target by issuing a GET request to the target
+    #     URL, and then updates the local proxy target data and status information according to the
+    #     response. The request is sent to the target by the implementation-specific _send_request
+    #     method.
+
+    #     :param path: path to data on remote target
+    #     :param get_metadata: flag indicating if metadata is to be requested
+    #     """
+    #     # Create a GET request to send to the target
+    #     headers = self.request_headers.copy()
+
+    #     # If metadata is requested, modify the Accept header accordingly
+    #     if get_metadata:
+    #         headers["Accept"] += ";metadata=True"
+
+    #     request = {
+    #         'url': self.url + path,
+    #         'headers': headers,
+    #         'timeout': self.request_timeout
+    #     }
+
+    #     # Send the request to the remote target
+    #     return self._send_request('GET', request, path, get_metadata)
+
+    # def remote_set(self, path, data):
+    #     """
+    #     Set data on the remote target.
+
+    #     This method sends data to the remote target by issuing a PUT request to the target
+    #     URL, and then updates the local proxy target data and status information according to the
+    #     response. The request is sent to the target by the implementation-specific _send_request
+    #     method.
+
+    #     :param path: path to data on remote target
+    #     :param data: data to set on remote target
+    #     """
+    #     # Encode the request data as JSON if necessary
+    #     if isinstance(data, dict):
+    #         data = json_encode(data)
+
+    #     # Create a PUT request dict to send to the _send_request method
+    #     request = {
+    #         'url': self.url + path,
+    #         'headers': self.request_headers,
+    #         'timeout': self.request_timeout,
+    #         'data': data
+    #     }
+
+    #     # Send the request to the remote target
+    #     return self._send_request('PUT', request, path)
     
     def _process_response(self, response, path, get_metadata):
         """
         Process a response from the remote target.
+        
+        This method processes the response of a remote target to a request. The response is used to
+        update the local proxy target data metadata and status as appropriate. If the request failed
+        the returned exception is decoded and the status updated accordingly.
+
+        :param response: HTTP response from the target, or an exception if the response failed
+        :param path: path of data being updated
+        :param get_metadata: flag indicating if metadata was requested
         """
         # Update the timestamp of the last request in standard format
-        self.last_update = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
+        self.last_update = tornado.httputil.format_timestamp(time.time())
 
         # If an HTTP response was received, handle accordingly
         if isinstance(response, requests.Response):

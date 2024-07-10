@@ -1,6 +1,9 @@
 import asyncio
 import logging
 from functools import partial
+import os
+import signal
+import sys
 from odin.adapters.parameter_tree import ParameterTree, ParameterTreeError
 from odin.adapters.adapter import ApiAdapterRequest, ApiAdapterResponse
 
@@ -9,17 +12,23 @@ class PrototypeDAQController:
 
     def __init__(self):
         """Initialize the controller object."""
-        self.test_value = "This is a test value :):):):)"
+        self.test_value = "Test String from main IAC Adapter"
+        self.expected_adapters = ["system_info", "dummy", "test_proxy"]
         self.adapters = {}
-
         # Initialize the parameter tree after adapters are loaded
         self.param_tree = None
 
     def initialize_adapters(self, adapters):
         """Get access to all of the other adapters."""
         self.adapters = adapters
-        logging.debug(f"Adapters loaded: {self.adapters}")
+        logging.debug(f"Adapters loaded: {self.adapters}")      
+
+        # for adapter in self.expected_adapters:
+        #     if ["System_info"] not found:
+        #         KeyboardInterrupt
+
         #assign adapters to self and check for loaded adpaters
+
 
         self.param_tree = ParameterTree({
             'test_value': (lambda: self.test_value, None),
@@ -41,7 +50,6 @@ class PrototypeDAQController:
         response = self.adapters[adapter_name].get(path, request)
         if response.status_code != 200:
             logging.debug(f"IAC GET failed for adapter {adapter_name}, path {path}: {response.data}")
-        logging.debug(f'Raw response: {response.data}')
         return response.data[path]
 
     def iac_set(self, adapter_name, path, data):
