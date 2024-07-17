@@ -127,61 +127,6 @@ class BaseProxyTarget(object):
 
         # Send the request to the remote target
         return self._send_request(request, path)
-
-    # def remote_get(self, path='', get_metadata=False):
-    #     """
-    #     Get data from the remote target.
-
-    #     This method requests data from the remote target by issuing a GET request to the target
-    #     URL, and then updates the local proxy target data and status information according to the
-    #     response. The request is sent to the target by the implementation-specific _send_request
-    #     method.
-
-    #     :param path: path to data on remote target
-    #     :param get_metadata: flag indicating if metadata is to be requested
-    #     """
-    #     # Create a GET request to send to the target
-    #     headers = self.request_headers.copy()
-
-    #     # If metadata is requested, modify the Accept header accordingly
-    #     if get_metadata:
-    #         headers["Accept"] += ";metadata=True"
-
-    #     request = {
-    #         'url': self.url + path,
-    #         'headers': headers,
-    #         'timeout': self.request_timeout
-    #     }
-
-    #     # Send the request to the remote target
-    #     return self._send_request('GET', request, path, get_metadata)
-
-    # def remote_set(self, path, data):
-    #     """
-    #     Set data on the remote target.
-
-    #     This method sends data to the remote target by issuing a PUT request to the target
-    #     URL, and then updates the local proxy target data and status information according to the
-    #     response. The request is sent to the target by the implementation-specific _send_request
-    #     method.
-
-    #     :param path: path to data on remote target
-    #     :param data: data to set on remote target
-    #     """
-    #     # Encode the request data as JSON if necessary
-    #     if isinstance(data, dict):
-    #         data = json_encode(data)
-
-    #     # Create a PUT request dict to send to the _send_request method
-    #     request = {
-    #         'url': self.url + path,
-    #         'headers': self.request_headers,
-    #         'timeout': self.request_timeout,
-    #         'data': data
-    #     }
-
-    #     # Send the request to the remote target
-    #     return self._send_request('PUT', request, path)
     
     def _process_response(self, response, path, get_metadata):
         """

@@ -31,7 +31,6 @@ class DummyAdapter(ApiAdapter):
     def put(self, path, request):
         try:
             body = decode_request_body(request)
-            logging.debug(f"PUT request body: {body}")
             self.dummyController.set(path, body)
             response = self.dummyController.get(path, False)
             status_code = 200
@@ -39,7 +38,6 @@ class DummyAdapter(ApiAdapter):
             response = {'error': str(e)}
             status_code = 400
 
-        logging.debug(f"PUT response: {response}")
         return ApiAdapterResponse(response, content_type='application/json', status_code=status_code)
 
     def cleanup(self):
@@ -64,7 +62,6 @@ class Dummy():
 
     def set_task_interval(self, interval):
         """Set the background task interval."""
-        logging.debug("Setting background task interval to %f", interval)
         self.background_task_interval = float(interval)
         
     def set_task_enable(self, enable):
@@ -92,7 +89,7 @@ class Dummy():
     def set(self, path, value):
         """Set a parameter in the parameter tree."""
         return self.param_tree.set(path, value)
-    
+       
     def cleanup(self):
         """Clean up the Dummy instance."""
         logging.debug("Starting cleanup of Dummy adapter.")

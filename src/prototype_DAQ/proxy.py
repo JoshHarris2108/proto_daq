@@ -15,6 +15,9 @@ from odin.adapters.adapter import (
 #from odin.adapters.base_proxy import BaseProxyTarget, BaseProxyAdapter
 from prototype_DAQ.base_proxy import BaseProxyTarget, BaseProxyAdapter
 
+#node_1 = http://192.168.0.157:8888/api/0.1/detector/
+
+#http://127.0.0.1:8888/api/0.1/workshop/
 
 class ProxyTarget(BaseProxyTarget):
     """
@@ -71,7 +74,7 @@ class ProxyTarget(BaseProxyTarget):
     def _send_request(self, request, path, get_metadata=False):
         """
         Send a request to the remote target using the Requests library, handling the response
-        and updating target data accordingly
+        and updating target data accordingly.
 
         :param request: HTTP request dict to transmit to target
         :param path: path of data being updated
@@ -93,31 +96,6 @@ class ProxyTarget(BaseProxyTarget):
 
         # Process the response from the target, updating data as appropriate
         self._process_response(response, path, get_metadata)
-
-    # def _send_request(self, method, request, path, get_metadata=False):
-    #         """
-    #         Send a request to the remote target and update data.
-        
-    #         This internal method sends a request to the remote target using the HTTP client
-    #         and handles the response, updating target data accordingly.
-
-    #         :param request: HTTP request to transmit to target
-    #         :param path: path of data being updated
-    #         :param get_metadata: flag indicating if metadata is to be requested
-    #         """
-    #         # Send the request to the remote target, handling any exceptions that occur
-    #         try:
-    #             # Build the get/put request, using the requests library to send them
-    #             if method == 'GET':
-    #                 response = requests.get(url=request['url'], headers=request['headers'], timeout=request['timeout'])
-    #             elif method == 'PUT':
-    #                 response = requests.put(url=request['url'], headers=request['headers'], timeout=request['timeout'], data=request['data'])
-    #         except Exception as fetch_exception:
-    #             # Set the response to the exception so it can be handled during response resolution 
-    #             response = fetch_exception
-
-    #         # Process the response from the target, updating data as appropriate
-    #         self._process_response(response, path, get_metadata)
 
 
 class ProxyAdapter(ApiAdapter, BaseProxyAdapter):

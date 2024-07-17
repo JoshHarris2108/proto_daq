@@ -32,13 +32,12 @@ class PrototypeDAQAdapter(ApiAdapter):
         content_type = 'application/json'
         return ApiAdapterResponse(response, content_type=content_type, status_code=status_code)
 
-    @request_types('application/json')
+    @request_types('application/json',"application/vnd.odin-native")
     @response_types('application/json', default='application/json')
     def put(self, path, request):
         content_type = 'application/json'
         try:
             data = json_decode(request.body)
-            logging.debug(f"PUT request data: {data}")
             self.protoDAQController.set(path, data)
             response = self.protoDAQController.get(path)
             status_code = 200
