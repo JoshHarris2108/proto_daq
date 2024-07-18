@@ -45,32 +45,6 @@ class ProxyTarget(BaseProxyTarget):
         self.remote_get()
         self.remote_get(get_metadata=True)
 
-    def remote_get(self, path='', get_metadata=False):
-        """
-        Get data from the remote target.
-
-        This method updates the local proxy target with new data by issuing a GET request to the
-        target URL, and then updates the local proxy target data and status information according to
-        the response. The detailed handling of this is implemented by the base class.
-
-        :param path: path to data on remote target
-        :param get_metadata: flag indicating if metadata is to be requested
-        """
-        super(ProxyTarget, self).remote_get(path, get_metadata)
-
-    def remote_set(self, path, data):
-        """
-        Set data on the remote target.
-
-        This method sends data to the remote target by issuing a PUT request to the target
-        URL, and then updates the local proxy target data and status information according to the
-        response. The detailed handling of this is implemented by the base class.
-
-        :param path: path to data on remote target
-        :param data: data to set on remote target
-        """
-        super(ProxyTarget, self).remote_set(path, data)
-
     def _send_request(self, request, path, get_metadata=False):
         """
         Send a request to the remote target using the Requests library, handling the response
